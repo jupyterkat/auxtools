@@ -205,10 +205,9 @@ pub fn hook(attr: TokenStream, item: TokenStream) -> TokenStream {
 			arg_names.push(p.ident.clone());
 			let index = arg_names.len() - 1;
 			proc_arg_unpacker.push(
-				(quote! {
+				quote! {
 					&args[#index]
-				})
-				.into(),
+				},
 			);
 		}
 	}

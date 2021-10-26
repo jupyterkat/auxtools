@@ -105,6 +105,13 @@ impl List {
 		length
 	}
 
+	pub fn iter(&self) -> ListIterator<'_> {
+		ListIterator {
+			list: self,
+			count: 0,
+		}
+	}
+
 	pub fn is_list(value: &Value) -> bool {
 		match value.raw.tag {
 			raw_types::values::ValueTag::List
@@ -151,5 +158,33 @@ impl From<List> for Value {
 impl From<&List> for Value {
 	fn from(list: &List) -> Self {
 		list.value.clone()
+	}
+}
+
+pub struct ListIterator<'a> {
+	list: &'a List,
+	count: u32,
+}
+
+impl Iterator for ListIterator<'_> {
+	type Item = (Value, Value);
+	fn next(&mut self) -> Option<Self::Item> {
+		loop {
+			if self.count > self.list.len() {
+				return None;
+			}
+
+			self.count += 1;
+
+			if let Ok(key) = self.list.get(self.count) {
+				if let Ok(value) = self.list.get(&key) {
+					return Some((key, value));
+				}
+			}
+		}
+	}
+
+	fn size_hint(&self) -> (usize, Option<usize>) {
+		(0, Some(self.list.len() as usize))
 	}
 }

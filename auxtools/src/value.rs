@@ -92,7 +92,7 @@ impl Value {
 
 	/// Checks if the Value is null.
 	pub fn is_null(&self) -> bool {
-		match self.tag {
+		match self.raw.tag {
 			raw_types::values::ValueTag::Null => true,
 			_ => false
 		}

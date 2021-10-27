@@ -90,6 +90,14 @@ impl Value {
 		}
 	}
 
+	/// Checks if the Value is null.
+	pub fn is_null(&self) -> Bool {
+		match self.tag {
+			raw_types::values::ValueTag::Null => true,
+			_ => false
+		}
+	}
+
 	/// Gets a turf by ID, without bounds checking. Use turf_by_id if you're not sure about how to check the bounds.
 	pub unsafe fn turf_by_id_unchecked(id: u32) -> Value {
 		Value {

@@ -389,8 +389,12 @@ byond_ffi_fn! { auxtools_init(_input) {
 		proc::populate_procs();
 
 		for cthook in inventory::iter::<hooks::CompileTimeHook> {
-			if let Err(e) = hooks::hook(cthook.proc_path, cthook.hook) {
-				return Some(format!("FAILED (Could not hook proc {}: {:?})", cthook.proc_path, e));
+			if cthook.ignore_fails {
+				let _ = hooks::hook(cthook.proc_path, cthook.hook);
+			} else {
+				if let Err(e) = hooks::hook(cthook.proc_path, cthook.hook) {
+					return Some(format!("FAILED (Could not hook proc {}: {:?})", cthook.proc_path, e));
+				}
 			}
 		}
 		set_init_level(InitLevel::None);

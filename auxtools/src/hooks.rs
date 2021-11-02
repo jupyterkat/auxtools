@@ -13,11 +13,12 @@ use std::os::raw::c_char;
 pub struct CompileTimeHook {
 	pub proc_path: &'static str,
 	pub hook: ProcHook,
+	pub ignore_fails: bool,
 }
 
 impl CompileTimeHook {
-	pub fn new(proc_path: &'static str, hook: ProcHook) -> Self {
-		CompileTimeHook { proc_path, hook }
+	pub fn new(proc_path: &'static str, hook: ProcHook, ignore_fails: bool) -> Self {
+		CompileTimeHook { proc_path, hook, ignore_fails }
 	}
 }
 

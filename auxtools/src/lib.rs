@@ -8,10 +8,10 @@
 mod byond_ffi;
 mod bytecode_manager;
 pub mod debug;
-mod hooks;
+pub mod hooks;
 mod init;
 mod list;
-mod proc;
+pub mod proc;
 pub mod raw_types;
 mod runtime;
 pub mod sigscan;
@@ -24,7 +24,7 @@ mod weak_value;
 
 use init::{get_init_level, set_init_level, InitLevel};
 
-pub use auxtools_impl::{hook, try_hook, init, runtime_handler, shutdown};
+pub use auxtools_impl::{hook, init, runtime_handler, shutdown};
 pub use hooks::{CompileTimeHook, RuntimeHook};
 pub use init::{FullInitFunc, PartialInitFunc, PartialShutdownFunc};
 pub use list::List;
@@ -75,6 +75,7 @@ signatures! {
 	get_proc_array_entry => "E8 ?? ?? ?? ?? 8B 00 89 04 24 E8 ?? ?? ?? ?? 8B 00 89 44 24 ?? 8D 45 ??",
 	get_string_id => "55 89 E5 57 56 89 CE 53 89 D3 83 EC 5C 8B 55 ?? 85 C0 88 55 ?? 0F 84 ?? ?? ?? ??",
 	call_proc_by_id => "E8 ?? ?? ?? ?? 8B 45 ?? 8B 55 ?? 89 45 ?? 89 55 ?? 8B 55 ?? 8B 4D ?? 8B 5D ??",
+	call_proc_by_id2 => "e8 ?? ?? ?? ?? 8b 45 ?? 8b 55 ?? 8b 5d ?? 8b 75 e4 83 ec 04 89 44 24 08 89 54 24 04",
 	get_variable => "55 89 E5 81 EC C8 00 00 00 8B 55 ?? 89 5D ?? 8B 5D ?? 89 75 ?? 8B 75 ??",
 	get_string_table_entry => "55 89 E5 83 EC 18 8B 45 ?? 39 05 ?? ?? ?? ?? 76 ?? 8B 15 ?? ?? ?? ?? 8B 04 ??",
 	call_datum_proc_by_name => "55 89 E5 57 56 53 83 EC 5C 8B 55 ?? 0F B6 45 ?? 8B 4D ?? 8B 5D ?? 89 14 24 8B 55 ?? 88 45 ?? 0F B6 F8 8B 75 ?? 8D 45 ?? 89 44 24 ?? 89 F8 89 4C 24 ?? 31 C9 C6 45 ?? 00 C7 44 24 ?? 01 00 00 00",
@@ -196,6 +197,16 @@ byond_ffi_fn! { auxtools_init(_input) {
 			suspended_procs_buffer
 		}
 
+		#[cfg(unix)]
+		with_scanner_by_call! { byondcore,
+			call_proc_by_id,
+			call_proc_by_id2,
+			get_proc_array_entry,
+			inc_ref_count,
+			get_misc_by_id,
+			runtime
+		}
+		#[cfg(windows)]
 		with_scanner_by_call! { byondcore,
 			call_proc_by_id,
 			get_proc_array_entry,
@@ -323,6 +334,10 @@ byond_ffi_fn! { auxtools_init(_input) {
 			raw_types::funcs::SUSPENDED_PROCS = *(suspended_procs.add(1) as *mut *mut raw_types::procs::SuspendedProcs);
 			raw_types::funcs::SUSPENDED_PROCS_BUFFER = *(suspended_procs_buffer.add(2) as *mut *mut raw_types::procs::SuspendedProcsBuffer);
 			raw_types::funcs::call_proc_by_id_byond = call_proc_by_id;
+			#[cfg(unix)]
+			{
+			raw_types::funcs::call_proc_by_id2_byond = call_proc_by_id2;
+			}
 			raw_types::funcs::call_datum_proc_by_name_byond = call_datum_proc_by_name;
 			raw_types::funcs::get_proc_array_entry_byond = get_proc_array_entry;
 			raw_types::funcs::get_string_id_byond = get_string_id;
@@ -389,12 +404,8 @@ byond_ffi_fn! { auxtools_init(_input) {
 		proc::populate_procs();
 
 		for cthook in inventory::iter::<hooks::CompileTimeHook> {
-			if cthook.ignore_fails {
-				let _ = hooks::hook(cthook.proc_path, cthook.hook);
-			} else {
-				if let Err(e) = hooks::hook(cthook.proc_path, cthook.hook) {
-					return Some(format!("FAILED (Could not hook proc {}: {:?})", cthook.proc_path, e));
-				}
+			if let Err(e) = hooks::hook(cthook.proc_path, cthook.hook) {
+				return Some(format!("FAILED (Could not hook proc {}: {:?})", cthook.proc_path, e));
 			}
 		}
 		set_init_level(InitLevel::None);

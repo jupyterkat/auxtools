@@ -3,6 +3,7 @@ use super::lists;
 use super::strings;
 use std::ffi::CStr;
 use std::fmt;
+use std::fmt::{Debug, Formatter};
 
 #[repr(u8)]
 #[derive(PartialEq, Copy, Clone, Debug, Hash)]
@@ -49,6 +50,8 @@ pub enum ValueTag {
 
 	Number = 0x2A,
 	Appearance = 0x3A,
+
+	ProcId = 0x26
 }
 
 impl fmt::Display for Value {
@@ -101,6 +104,12 @@ pub union ValueData {
 	pub number: f32,
 	pub id: u32,
 	pub list: lists::ListId,
+}
+
+impl Debug for ValueData {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		f.write_str(stringify!(self.id))
+	}
 }
 
 /// Internal thing used when interfacing with BYOND. You shouldn't need to use this.

@@ -7,6 +7,7 @@ using CallProcById_Ptr = Value(LINUX_REGPARM3 *)(Value, uint32_t, uint32_t, uint
 
 // The type of the hook defined in hooks.rs
 using CallProcById_Hook_Ptr = Value(*)(Value, uint32_t, uint32_t, uint32_t, Value, Value*, uint32_t, uint32_t, uint32_t);
+using CallProcById2_Hook_Ptr = Value*(*)(Value*, Value, uint32_t, uint32_t, uint32_t, Value, Value*, uint32_t, uint32_t, uint32_t);
 
 extern "C" {
 	// The ptr everybody else sees
@@ -15,6 +16,7 @@ extern "C" {
 	// The original function - set by rust after hooking
 	Runtime_Ptr runtime_original = nullptr;
 	CallProcById_Ptr call_proc_by_id_original = nullptr;
+	CallProcById2_Hook_Ptr call_proc_by_id_original2 = nullptr;
 }
 
 // If the top of this stack is true, we replace byond's runtime exceptions with our own
@@ -69,6 +71,27 @@ extern "C" Value LINUX_REGPARM3 call_proc_by_id_hook_trampoline(
 		return ret;
 	} else {
 		return call_proc_by_id_original(usr, proc_type, proc_id, unk_0, src, args, args_count, unk_1, unk_2);
+	}
+	//return call_proc_by_id_hook(usr, proc_type, proc_id, unk_0, src, args, args_count, unk_1, unk_2);
+}
+
+extern "C" Value* call_proc_by_id_hook_trampoline2(
+	Value* out,
+	Value usr,
+	uint32_t proc_type,
+	uint32_t proc_id,
+	uint32_t unk_0,
+	Value src,
+	Value* args,
+	uint8_t args_count,
+	uint32_t unk_1,
+	uint32_t unk_2
+) {
+
+	if (call_proc_by_id_hook(out, usr, proc_type, proc_id, unk_0, src, args, args_count, unk_1, unk_2)) {
+		return out;
+	} else {
+		return call_proc_by_id_original2(out, usr, proc_type, proc_id, unk_0, src, args, args_count, unk_1, unk_2);
 	}
 	//return call_proc_by_id_hook(usr, proc_type, proc_id, unk_0, src, args, args_count, unk_1, unk_2);
 }

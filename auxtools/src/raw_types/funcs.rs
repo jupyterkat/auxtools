@@ -19,6 +19,7 @@ pub static mut VARIABLE_NAMES: *const variables::VariableNameIdTable = std::ptr:
 // Rust shouldn't call these so we're going to treat them as void ptrs for simplicity
 extern "C" {
 	pub static mut call_proc_by_id_byond: *const c_void;
+	pub static mut call_proc_by_id2_byond: *const c_void;
 	pub static mut call_datum_proc_by_name_byond: *const c_void;
 	pub static mut get_proc_array_entry_byond: *const c_void;
 	pub static mut get_string_id_byond: *const c_void;

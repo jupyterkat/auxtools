@@ -180,7 +180,7 @@ pub fn hook(attr: TokenStream, item: TokenStream) -> TokenStream {
 		Some(p) => quote! {
 			auxtools::inventory::submit!(
 				#![crate = auxtools]
-				auxtools::CompileTimeHook::new(#p, #func_name, false)
+				auxtools::CompileTimeHook::new(#p, #func_name)
 			);
 		},
 		None => quote! {},
@@ -205,81 +205,10 @@ pub fn hook(attr: TokenStream, item: TokenStream) -> TokenStream {
 			arg_names.push(p.ident.clone());
 			let index = arg_names.len() - 1;
 			proc_arg_unpacker.push(
-				quote! {
+				(quote! {
 					&args[#index]
-				},
-			);
-		}
-	}
-	let _default_null = quote! {
-		#[allow(unreachable_code)]
-		auxtools::Value::null()
-	};
-	let result = quote! {
-		#cthook_prelude
-		#signature {
-			if #args_len > args.len() {
-				for i in 0..#args_len - args.len() {
-					args.push(auxtools::Value::null())
-				}
-			}
-			let (#arg_names) = (#proc_arg_unpacker);
-			#body
-		}
-	};
-	result.into()
-}
-
-#[proc_macro_attribute]
-pub fn try_hook(attr: TokenStream, item: TokenStream) -> TokenStream {
-	let input = syn::parse_macro_input!(item as syn::ItemFn);
-	let proc = syn::parse_macro_input!(attr as Option<syn::Lit>);
-	let func_name = &input.sig.ident;
-	let args = &input.sig.inputs;
-	let args_len = args.len();
-
-	match &input.sig.output {
-		syn::ReturnType::Default => {} //
-
-		syn::ReturnType::Type(_, ty) => {
-			return syn::Error::new(ty.span(), "Do not specify the return value of hooks")
-				.to_compile_error()
-				.into()
-		}
-	}
-
-	let cthook_prelude = match proc {
-		Some(p) => quote! {
-			auxtools::inventory::submit!(
-				#![crate = auxtools]
-				auxtools::CompileTimeHook::new(#p, #func_name, true)
-			);
-		},
-		None => quote! {},
-	};
-	let signature = quote! {
-		fn #func_name(
-			src: &auxtools::Value,
-			usr: &auxtools::Value,
-			args: &mut Vec<auxtools::Value>,
-		) -> auxtools::DMResult
-	};
-
-	let body = &input.block;
-	let mut arg_names: syn::punctuated::Punctuated<syn::Ident, syn::Token![,]> =
-		syn::punctuated::Punctuated::new();
-	let mut proc_arg_unpacker: syn::punctuated::Punctuated<
-		proc_macro2::TokenStream,
-		syn::Token![,],
-	> = syn::punctuated::Punctuated::new();
-	for arg in args.iter().map(extract_args) {
-		if let syn::Pat::Ident(p) = &*arg.pat {
-			arg_names.push(p.ident.clone());
-			let index = arg_names.len() - 1;
-			proc_arg_unpacker.push(
-				quote! {
-					&args[#index]
-				},
+				})
+				.into(),
 			);
 		}
 	}

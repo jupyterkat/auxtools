@@ -162,6 +162,8 @@ fn strip_path(p: String) -> String {
 	p.replace("/proc/", "/").replace("/verb/", "/")
 }
 
+extern crate log;
+
 pub fn populate_procs() {
 	let mut i: u32 = 0;
 	let override_ids =
@@ -189,6 +191,14 @@ pub fn populate_procs() {
 		};
 
 		i += 1;
+	}
+}
+
+pub fn dump_procs() {
+	unsafe {
+		PROCS_BY_NAME.as_ref().unwrap().iter().for_each(|(k, v)|
+		   log::info!("Proc: {:?} {:?}", k, v)
+	   )
 	}
 }
 

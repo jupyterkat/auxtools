@@ -55,6 +55,7 @@ struct RestoreJmpBuf
 extern "C"
 {
 	DEFINE_byond_REGPARM3(call_proc_by_id, Value, (Value, uint32_t, uint32_t, uint32_t, Value, const Value *, uint32_t, uint32_t, uint32_t));
+	DEFINE_byond(call_proc_by_id2, Value, (Value, uint32_t, uint32_t, uint32_t, Value, const Value *, uint32_t, uint32_t, uint32_t));
 	DEFINE_byond(call_datum_proc_by_name, Value, (Value, uint32_t, uint32_t, Value, const Value *, uint32_t, uint32_t, uint32_t));
 	DEFINE_byond(get_proc_array_entry, void *, (uint32_t));
 	DEFINE_byond_REGPARM3(get_string_id, uint32_t, (const char *, uint8_t, uint8_t, uint8_t));
@@ -90,7 +91,7 @@ extern "C" uint8_t call_proc_by_id(
 
 	BYOND_TRY
 	{
-		*out = call_proc_by_id_byond(usr, proc_type, proc_id, unk_0, src, args, args_count, unk_1, unk_2);
+		*out = call_proc_by_id2_byond(usr, proc_type, proc_id, unk_0, src, args, args_count, unk_1, unk_2);
 		return 1;
 	}
 	BYOND_CATCH

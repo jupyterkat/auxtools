@@ -19,6 +19,8 @@ macro_rules! byond_string {
 #[doc(hidden)]
 pub struct InternedString(pub &'static str, pub UnsafeCell<Option<StringRef>>);
 
+unsafe impl Sync for InternedString {}
+
 inventory::collect!(&'static InternedString);
 
 pub fn setup_interned_strings() {

@@ -8,7 +8,6 @@ use ahash::RandomState;
 use std::ffi::c_void;
 use std::ffi::CStr;
 use std::os::raw::c_char;
-use std::cell::RefCell;
 
 #[doc(hidden)]
 pub struct CompileTimeHook {
@@ -123,11 +122,21 @@ pub fn init() -> Result<(), String> {
 }
 
 pub type ProcHook = fn(&Value, &Value, &mut Vec<Value>) -> DMResult;
-
-pub type ByondProcFunc = unsafe extern "C" fn(out: *mut raw_types::values::Value, usr: raw_types::values::Value, src: raw_types::values::Value, args: *mut raw_types::values::Value, arg_count: u32) -> ();
+pub type CallProcByIdInterceptor = fn(
+	ret: *mut raw_types::values::Value,
+	usr_raw: raw_types::values::Value,
+	_proc_type: u32,
+	proc_id: raw_types::procs::ProcId,
+	_unknown1: u32,
+	src_raw: raw_types::values::Value,
+	args_ptr: *mut raw_types::values::Value,
+	num_args: usize,
+	_unknown2: u32,
+	_unknown3: u32,
+) -> u8;
 
 static mut PROC_HOOKS: Option<HashMap<raw_types::procs::ProcId, ProcHook, RandomState>> = None;
-static mut CALL_COUNT: Option<HashMap<raw_types::procs::ProcId, u32, RandomState>> = None;
+static mut INTERCEPTOR: Option<CallProcByIdInterceptor> = None;
 
 fn hook_by_id(id: raw_types::procs::ProcId, hook: ProcHook) -> Result<(), HookFailure> {
 	match unsafe {
@@ -145,7 +154,8 @@ fn hook_by_id(id: raw_types::procs::ProcId, hook: ProcHook) -> Result<(), HookFa
 
 pub fn clear_hooks() {
 	unsafe {
-	PROC_HOOKS = None;
+		PROC_HOOKS = None;
+		INTERCEPTOR = None;
 	}
 }
 
@@ -156,24 +166,9 @@ pub fn hook<S: Into<String>>(name: S, hook: ProcHook) -> Result<(), HookFailure>
 	}
 }
 
-pub fn chad_hook<S: Into<String>>(name: S, hook: ByondProcFunc) -> Result<(), HookFailure> {
-	match super::proc::get_proc(name) {
-		Some(p) => {
-			chad_hook_by_id(p.id, hook);
-			Ok(())
-		},
-		None => Err(HookFailure::ProcNotFound),
-	}
-}
-
-pub fn chad_hook_by_id(id: raw_types::procs::ProcId, hook: ByondProcFunc) {
+pub fn install_interceptor(func: CallProcByIdInterceptor) {
 	unsafe {
-		let mut hooks = CHAD_HOOKS.borrow_mut();
-		let idx = id.0 as usize;
-		if idx >= hooks.len() {
-			hooks.resize((idx + 1) as usize, None);
-		}
-		hooks[idx] = Some(hook);
+		INTERCEPTOR = Some(func);
 	}
 }
 
@@ -192,31 +187,6 @@ extern "C" fn on_runtime(error: *const c_char) {
 	}
 }
 
-pub struct CallCount {
-	pub proc: Proc,
-	pub count: u32
-}
-
-pub fn call_counts() -> Option<Vec<CallCount>> {
-	unsafe {
-		return Some(CALL_COUNT
-				.get_or_insert_with(|| HashMap::with_hasher(RandomState::default()))
-				.iter()
-				.filter_map(|(id, val)|
-			if let Some(proc) = Proc::from_id(*id) {
-				Some(CallCount { proc: proc, count: *val })
-			} else {
-				None
-			}
-		).collect::<Vec<_>>());
-	}
-}
-
-pub static mut ENABLE_CALL_COUNTS: bool = false;
-pub static mut ENABLE_CHAD_HOOKS: bool = true;
-pub static mut CHAD_HOOKS: RefCell<Vec<Option<ByondProcFunc>>> = RefCell::new(Vec::new());
-
-
 #[no_mangle]
 extern "C" fn call_proc_by_id_hook(
 	ret: *mut raw_types::values::Value,
@@ -230,23 +200,22 @@ extern "C" fn call_proc_by_id_hook(
 	_unknown2: u32,
 	_unknown3: u32,
 ) -> u8 {
-
-	if unsafe { ENABLE_CHAD_HOOKS } {
-		let hooks = unsafe {
-			CHAD_HOOKS.borrow()
-		};
-		if let Some(hook) = hooks.get(proc_id.0 as usize) {
-			if let Some(hook) = hook {
-				unsafe { hook(ret, src_raw, usr_raw, args_ptr, num_args as u32) };
-				return 1;
-			}
-		}
-	}
-
-	if unsafe { ENABLE_CALL_COUNTS } {
-		unsafe {
-			*CALL_COUNT.get_or_insert_with(|| HashMap::with_hasher(RandomState::default())).entry(proc_id).or_default() += 1
-		}
+	unsafe {
+		let result = INTERCEPTOR.map_or(0, |interceptor| {
+				interceptor(
+					ret,
+					usr_raw,
+					_proc_type,
+					proc_id,
+					_unknown1,
+					src_raw,
+					args_ptr,
+					num_args,
+					_unknown2,
+					_unknown3
+				)
+			});
+		if result == 1 { return 1; }
 	}
 
 	unsafe { PROC_HOOKS.as_ref() }

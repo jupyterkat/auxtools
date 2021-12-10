@@ -1,8 +1,9 @@
 #![deny(clippy::complexity, clippy::correctness, clippy::perf, clippy::style)]
 
 use proc_macro::TokenStream;
+use std::borrow::Borrow;
 use quote::quote;
-use syn::{parse_macro_input, spanned::Spanned, Lit};
+use syn::{parse_macro_input, spanned::Spanned, Lit, Type};
 
 fn from_signature(s: String) -> Vec<Option<u8>> {
 	s.trim()
@@ -170,9 +171,22 @@ pub fn hook(attr: TokenStream, item: TokenStream) -> TokenStream {
 		syn::ReturnType::Default => {} //
 
 		syn::ReturnType::Type(_, ty) => {
-			return syn::Error::new(ty.span(), "Do not specify the return value of hooks")
-				.to_compile_error()
-				.into()
+			let ok = match ty.borrow() {
+				Type::Path(path) => {
+					if let Some(path_segment) = path.path.segments.first() {
+						format!("{}", path_segment.ident) == "DMResult".to_owned()
+					} else {
+						false
+					}
+				},
+				_ => false
+			};
+
+			if !ok {
+				return syn::Error::new(ty.span(), "Do not specify the return value of hooks or use DMResult")
+					.to_compile_error()
+					.into()
+			}
 		}
 	}
 

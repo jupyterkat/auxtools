@@ -16,12 +16,62 @@ const OPCODE_DEBUG_OPERAND: u32 = 0x1338;
 
 static mut EXECUTE_INSTRUCTION: *const c_void = std::ptr::null();
 
-extern "C" {
-	// Trampoline to the original un-hooked BYOND execute_instruction code
-	static mut execute_instruction_original: *const c_void;
+// Trampoline to the original un-hooked BYOND execute_instruction code
+static mut EXECUTE_INSTRUCTION_ORIGINAL: *const c_void = std::ptr::null();
 
-	// Our version of execute_instruction. It hasn't got a calling convention rust knows about, so don't call it.
-	fn execute_instruction_hook();
+// i686-pc-windows-gnu, i686-pc-windows-msvc
+#[cfg(all(target_arch = "x86", target_family = "windows"))]
+#[naked_function::naked]
+// EAX = [CURRENT_EXECUTION_CONTEXT]
+unsafe extern "C" fn execute_instruction_hook() {
+	asm!(
+		"
+		push ecx
+		push edx
+		push eax
+		call {0}
+		add esp, 0x04
+		pop edx
+		pop ecx
+
+		mov ecx, {1}
+		jmp ecx
+		",
+		sym handle_instruction,
+		sym EXECUTE_INSTRUCTION_ORIGINAL
+	)
+}
+
+// i686-unknown-linux-gnu
+#[cfg(all(target_arch = "x86", target_family = "unix"))]
+#[naked_function::naked]
+// EDI = [CURRENT_EXECUTION_CONTEXT]
+unsafe extern "C" fn execute_instruction_hook() {
+	asm!(
+		"
+		sub esp, 0x04
+		push ecx
+		push edx
+		push edi
+		call {0}
+		mov edi, eax
+		add esp, 0x04
+		pop edx
+		pop ecx
+		add esp, 0x04
+
+		mov eax, {1}
+		jmp eax
+		",
+		sym handle_instruction,
+		sym EXECUTE_INSTRUCTION_ORIGINAL
+	)
+}
+//Stub function to make rust analyzer work, don't actually compile in x86_64
+#[cfg(target_arch = "x86_64")]
+#[naked_function::naked]
+unsafe extern "C" fn execute_instruction_hook() {
+	asm!()
 }
 
 #[init(full)]
@@ -62,7 +112,7 @@ fn instruction_hooking_init() -> Result<(), String> {
 		hook.enable()
 			.map_err(|_| "Couldn't enable EXECUTE_INSTRUCTION detour")?;
 
-		execute_instruction_original = std::mem::transmute(hook.trampoline());
+		EXECUTE_INSTRUCTION_ORIGINAL = std::mem::transmute(hook.trampoline());
 
 		// We never remove or disable the hook, so just forget about it.
 		std::mem::forget(hook);

@@ -69,9 +69,8 @@ unsafe extern "C" fn execute_instruction_hook() {
 }
 //Stub function to make rust analyzer work, don't actually compile in x86_64
 #[cfg(target_arch = "x86_64")]
-#[naked_function::naked]
-unsafe extern "C" fn execute_instruction_hook() {
-	asm!()
+fn execute_instruction_hook() {
+	panic!("The debug server only supports i686 targets!")
 }
 
 #[init(full)]

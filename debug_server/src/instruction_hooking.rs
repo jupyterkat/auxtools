@@ -21,10 +21,9 @@ static mut EXECUTE_INSTRUCTION_ORIGINAL: *const c_void = std::ptr::null();
 
 // i686-pc-windows-gnu, i686-pc-windows-msvc
 #[cfg(all(target_arch = "x86", target_family = "windows"))]
-#[naked_function::naked]
 // EAX = [CURRENT_EXECUTION_CONTEXT]
 unsafe extern "C" fn execute_instruction_hook() {
-	asm!(
+	std::arch::asm!(
 		"
 		push ecx
 		push edx
@@ -38,16 +37,16 @@ unsafe extern "C" fn execute_instruction_hook() {
 		jmp ecx
 		",
 		sym handle_instruction,
-		sym EXECUTE_INSTRUCTION_ORIGINAL
+		sym EXECUTE_INSTRUCTION_ORIGINAL,
+		options(noreturn),
 	)
 }
 
 // i686-unknown-linux-gnu
 #[cfg(all(target_arch = "x86", target_family = "unix"))]
-#[naked_function::naked]
 // EDI = [CURRENT_EXECUTION_CONTEXT]
 unsafe extern "C" fn execute_instruction_hook() {
-	asm!(
+	std::arch::asm!(
 		"
 		sub esp, 0x04
 		push ecx
@@ -64,7 +63,8 @@ unsafe extern "C" fn execute_instruction_hook() {
 		jmp eax
 		",
 		sym handle_instruction,
-		sym EXECUTE_INSTRUCTION_ORIGINAL
+		sym EXECUTE_INSTRUCTION_ORIGINAL,
+		options(noreturn)
 	)
 }
 //Stub function to make rust analyzer work, don't actually compile in x86_64

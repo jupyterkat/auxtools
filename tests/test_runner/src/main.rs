@@ -62,6 +62,8 @@ fn main() {
 
 	let res = std::str::from_utf8(&output).unwrap();
 
+	println!("{}", res.clone());
+
 	// Check for any messages matching "FAILED: <msg>"
 	let errors = res
 		.lines()

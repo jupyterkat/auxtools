@@ -127,7 +127,7 @@ signatures! {
 	inc_ref_count => universal_signature!(call, "E8 ?? ?? ?? ?? 8B 43 ?? 80 48 ?? 04 8B 5D ?? 8B 75 ?? 8B 7D ?? 89 EC 5D"),
 	get_assoc_element => version_dependent_signature!(
 		..1589 => (call, "55 89 E5 83 EC 68 89 4D ?? B9 7B 00 00 00 89 5D ?? 89 D3 89 75 ?? 89 C6"),
-		1589.. => (call, "55 89 E5 83 EC 68 89 5D ?? 8D 5D ?? 89 75 ?? 89 7D ?? 80 7D ?? 54 76 ??")
+		1589.. => (call, "55 89 E5 83 EC 68 89 5D ?? 8B 5D ?? 89 7D ?? 89 D7 8B 55 ?? 89 75 ?? 0F B7 F0")
 	),
 	//get_assoc_element => universal_signature!("55 89 E5 83 EC 68 89 4D ?? B9 7B 00 00 00 89 5D ?? 89 D3 89 75 ?? 89 C6"),
 	set_assoc_element => universal_signature!("55 B9 7C 00 00 00 89 E5 83 EC 58 89 7D ?? 8B 7D ?? 89 5D ?? 89 C3 8B 45 ??"),

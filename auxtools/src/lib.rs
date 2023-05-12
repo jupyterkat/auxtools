@@ -117,8 +117,8 @@ signatures! {
 	),
 	get_string_table_entry => universal_signature!("55 89 E5 83 EC 18 8B 45 ?? 39 05 ?? ?? ?? ?? 76 ?? 8B 15 ?? ?? ?? ?? 8B 04 ??"),
 	call_datum_proc_by_name => version_dependent_signature!(
-		..1589 => (call, "55 89 E5 57 56 53 83 EC 5C 8B 55 ?? 0F B6 45 ?? 8B 4D ?? 8B 5D ?? 89 14 24 8B 55 ?? 88 45 ?? 0F B6 F8 8B 75 ?? 8D 45 ?? 89 44 24 ?? 89 F8 89 4C 24 ?? 31 C9 C6 45 ?? 00 C7 44 24 ?? 01 00 00 00"),
-		1589.. => (call, "55 89 E5 57 56 53 83 EC 5C 8B 55 ?? 0F B6 45 ?? 8B 5D ?? C7 04 24 ?? ?? ?? ??")
+		..1602 => (call, "55 89 E5 57 56 53 83 EC 5C 8B 55 ?? 0F B6 45 ?? 8B 4D ?? 8B 5D ?? 89 14 24 8B 55 ?? 88 45 ?? 0F B6 F8 8B 75 ?? 8D 45 ?? 89 44 24 ?? 89 F8 89 4C 24 ?? 31 C9 C6 45 ?? 00 C7 44 24 ?? 01 00 00 00"),
+		1602.. => (call, "55 89 E5 57 56 53 83 EC 5C 8B 55 ?? 0F B6 45 ?? 8B 5D ?? C7 04 24 ?? ?? ?? ??")
 	),
 	dec_ref_count => version_dependent_signature!(
 		1543.. => (call, "E8 ?? ?? ?? ?? C7 06 00 00 00 00 C7 46 ?? 00 00 00 00 A1 ?? ?? ?? ?? 0F B7 50 ??"),
@@ -126,11 +126,14 @@ signatures! {
 	),
 	inc_ref_count => universal_signature!(call, "E8 ?? ?? ?? ?? 8B 43 ?? 80 48 ?? 04 8B 5D ?? 8B 75 ?? 8B 7D ?? 89 EC 5D"),
 	get_assoc_element => version_dependent_signature!(
-		..1589 => (call, "55 89 E5 83 EC 68 89 4D ?? B9 7B 00 00 00 89 5D ?? 89 D3 89 75 ?? 89 C6"),
-		1589.. => (call, "55 89 E5 83 EC 68 89 5D ?? 8B 5D ?? 89 7D ?? 89 D7 8B 55 ?? 89 75 ?? 0F B7 F0")
+		..1602 => (call, "55 89 E5 83 EC 68 89 4D ?? B9 7B 00 00 00 89 5D ?? 89 D3 89 75 ?? 89 C6"),
+		1602.. => (call, "55 89 E5 83 EC 68 89 5D ?? 8B 5D ?? 89 7D ?? 89 D7 8B 55 ?? 89 75 ?? 0F B7 F0")
 	),
-	//get_assoc_element => universal_signature!("55 89 E5 83 EC 68 89 4D ?? B9 7B 00 00 00 89 5D ?? 89 D3 89 75 ?? 89 C6"),
-	set_assoc_element => universal_signature!("55 B9 7C 00 00 00 89 E5 83 EC 58 89 7D ?? 8B 7D ?? 89 5D ?? 89 C3 8B 45 ??"),
+	set_assoc_element => version_dependent_signature!(
+		..1602 => (call, "55 B9 7C 00 00 00 89 E5 83 EC 58 89 7D ?? 8B 7D ?? 89 5D ?? 89 C3 8B 45 ??"),
+		1602.. => (call, "")
+	),
+	//set_assoc_element => universal_signature!("55 B9 7C 00 00 00 89 E5 83 EC 58 89 7D ?? 8B 7D ?? 89 5D ?? 89 C3 8B 45 ??"),
 	create_list => universal_signature!("55 89 E5 57 56 53 83 EC 2C A1 ?? ?? ?? ?? 8B 75 ?? 85 C0 0F 84 ?? ?? ?? ??"),
 	append_to_list => universal_signature!("55 89 E5 83 EC 38 3C 54 89 5D ?? 8B 5D ?? 89 75 ?? 8B 75 ?? 89 7D ?? 76 ??"),
 	remove_from_list => universal_signature!("55 89 E5 83 EC 48 3C 54 89 5D ?? 89 C3 89 75 ?? 8B 75 ?? 89 7D ?? 8B 7D ??"),
